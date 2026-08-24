@@ -226,6 +226,17 @@ async def _try_repository_fallback(doi: str, title: str, save_path: str) -> tupl
                 continue
 
             for paper in papers:
+                requested_doi = (doi or "").strip().lower()
+                candidate_doi = str(getattr(paper, "doi", "") or "").strip().lower()
+                requested_title = " ".join((title or "").split()).strip().lower()
+                candidate_title = " ".join(str(getattr(paper, "title", "") or "").split()).strip().lower()
+                identity_matches = (
+                    bool(requested_doi and candidate_doi and requested_doi == candidate_doi)
+                    or bool(requested_title and candidate_title and requested_title == candidate_title)
+                )
+                if not identity_matches:
+                    continue
+
                 pdf_url = str(getattr(paper, "pdf_url", "") or "").strip()
                 if not pdf_url:
                     continue
