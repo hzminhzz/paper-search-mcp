@@ -71,6 +71,10 @@ class TestZenodoSearcher(unittest.TestCase):
             self.assertEqual(paper.title, "Zenodo Parser Test")
             self.assertEqual(paper.doi, "10.5281/zenodo.12345")
             self.assertTrue(paper.pdf_url.endswith("paper.pdf"))
+            self.assertEqual(paper.authors, ["Alice Example", "Bob Example"])
+            serialized = paper.to_dict()
+            self.assertEqual(serialized["authors"], "Alice Example; Bob Example")
+            self.assertEqual(serialized["published_date"], "2024-01-15T00:00:00")
 
     def test_parse_record_invalid(self):
         paper = self.searcher._parse_record({"metadata": {}})

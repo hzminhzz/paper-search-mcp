@@ -53,6 +53,35 @@ class TestDownloadWithFallback(unittest.TestCase):
             self.assertIn("OA fallback chain", result)
 
 
+class TestRepositoryFallbackIdentityGuard(unittest.TestCase):
+    def test_unrelated_repository_hit_is_rejected(self):
+        class FakePaper:
+            paper_id = "PMC999"
+            doi = "10.9999/unrelated"
+            title = "Unrelated paper"
+            pdf_url = "https://example.org/unrelated.pdf"
+
+        fake_searcher = type(
+            "S", (), {"search": staticmethod(lambda q, max_results=3: [FakePaper()])}
+        )
+
+        with patch.object(server, "openaire_searcher", fake_searcher), \
+             patch.object(server, "core_searcher", fake_searcher), \
+             patch.object(server, "europepmc_searcher", fake_searcher), \
+             patch.object(server, "pmc_searcher", fake_searcher), \
+             patch("paper_search_mcp.server._download_from_url", new=AsyncMock()) as download:
+            result, _ = asyncio.run(
+                server._try_repository_fallback(
+                    doi="10.1111/jofi.12186",
+                    title="Rise of the Machines: Algorithmic Trading in the Foreign Exchange Market",
+                    save_path="/tmp",
+                )
+            )
+
+            self.assertIsNone(result)
+            download.assert_not_awaited()
+
+
 class TestRepositoryFallbackNumericPaperId(unittest.TestCase):
     """Regression test for issue #57: _try_repository_fallback crashed when a
     repository connector returned a Paper whose paper_id was a non-string
@@ -62,6 +91,8 @@ class TestRepositoryFallbackNumericPaperId(unittest.TestCase):
         class FakePaper:
             pdf_url = "https://example.org/oa.pdf"
             paper_id = 12345  # int, not str — caused 'int' object has no attribute 'strip'
+            doi = "10.1000/test"
+            title = "some title"
 
         fake_searcher = type(
             "S", (), {"search": staticmethod(lambda q, max_results=3: [FakePaper()])}

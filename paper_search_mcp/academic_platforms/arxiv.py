@@ -79,8 +79,21 @@ class ArxivSearcher(PaperSource):
         return papers
 
     def download_pdf(self, paper_id: str, save_path: str) -> str:
+        paper_id = (paper_id or "").strip()
+        if not paper_id:
+            raise ValueError("Invalid arXiv paper_id: empty identifier")
+
         pdf_url = f"https://arxiv.org/pdf/{paper_id}.pdf"
-        response = requests.get(pdf_url)
+        response = self.session.get(pdf_url, timeout=60)
+        response.raise_for_status()
+
+        content_type = response.headers.get("content-type", "").lower()
+        if "pdf" not in content_type or not response.content.lstrip().startswith(b"%PDF"):
+            raise ValueError(
+                f"arXiv response for {paper_id} was not a PDF "
+                f"(content-type={content_type or 'unknown'})"
+            )
+
         os.makedirs(save_path, exist_ok=True)
         output_file = f"{save_path}/{paper_id}.pdf"
         with open(output_file, 'wb') as f:
