@@ -233,11 +233,14 @@ class ZenodoSearcher(PaperSource):
                 return None
 
             creators = meta.get("creators", [])
-            authors = ", ".join(
-                c.get("name", "")
-                or f"{c.get('given_name', '')} {c.get('family_name', '')}".strip()
+            authors = [
+                name
                 for c in creators
-            )
+                if (name := (
+                    c.get("name", "")
+                    or f"{c.get('given_name', '')} {c.get('family_name', '')}".strip()
+                ).strip())
+            ]
 
             abstract = (meta.get("description") or "").strip()
             # Zenodo descriptions can contain HTML — strip tags minimally

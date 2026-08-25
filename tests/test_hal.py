@@ -63,7 +63,9 @@ class TestHALSearcher(unittest.TestCase):
             self.assertEqual(paper.paper_id, "hal:hal-01234567")
             self.assertEqual(paper.title, "HAL Parser Test")
             self.assertEqual(paper.doi, "10.1000/hal-test")
+            self.assertEqual(paper.authors, ["Alice Example", "Bob Example"])
             serialized = paper.to_dict()
+            self.assertEqual(serialized["authors"], "Alice Example; Bob Example")
             self.assertEqual(serialized["published_date"], "2023-01-01T00:00:00")
 
     def test_parse_doc_invalid(self):
